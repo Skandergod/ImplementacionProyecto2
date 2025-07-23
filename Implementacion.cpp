@@ -1,6 +1,10 @@
 #include <iostream>
+#include <fstream>
 
 using namespace std;
+
+char** map;
+int** mapMask;
 
 enum elementType
 {
@@ -194,9 +198,20 @@ class moto : public vehicle
 
 class carro : public vehicle
 {
+    public:
+    void display()
+    {
 
+    }
 };
 
+void leerArchivo(char* mapFileName, char* traficLights)
+{  
+    ifstream ifs;
+
+    ifs.open(mapFileName, std::ifstream::in)
+
+}
 
 int main(int argc, char* argv[])
 {
