@@ -1,10 +1,13 @@
 #include <iostream>
 #include <fstream>
+#include <string>
 
 using namespace std;
 
 char** map;
 int** mapMask;
+int nCiclos = 0;
+int fila = 0, columna = 0;
 
 enum elementType
 {
@@ -16,7 +19,7 @@ enum elementType
 class element
 {
     private:
-    int i, j, eType;
+    int i, j, eType, id;
 
     public:
     element()
@@ -57,6 +60,17 @@ class element
         return eType;
     }
 
+    //sets y gets del id del vehiculo
+    void setid (int a)
+    {
+        id = a;
+    }
+
+    int getid ()
+    {
+        return id;
+    }
+
 
     //funcion para que el elemento del mapa actue
     
@@ -93,10 +107,41 @@ class Semaforo : public element
         return patron[i];
     }
 
-    void Patron(int n)
+    void crearPatron(int n)
     {
         patron = new int[n];
+    }
+
+    void setPatronElement(int i, int value)
+    {
+        if (i >= 0 && i < nPatron)
+        {
+            patron[i] = value;
+        }
+    }
+    
+    int getPatronElement(int i)
+    {
+        if (i >= 0 && i < nPatron)
+        {
+            return patron[i];
+        }
+        return -1; // Valor por defecto si el índice es inválido
+    }
+
+    int getnPatron()
+    {
+        return nPatron;
+    }
+
+    void setnPatron(int n)
+    {
         nPatron = n;
+    }
+
+    void accion()
+    {
+        cout << "hello world" << endl;
     }
     
 
@@ -106,7 +151,7 @@ class vehicle : public element
 {
 
     private:
-    int dir, id, V, Tv, Td, Cd, A;
+    int dir, V, Tv, Td, Cd, A;
 
     //Tv = Tiempo vehiculo en movimiento
     //Td = Tiempo vehiculo detenido
@@ -125,17 +170,6 @@ class vehicle : public element
     int getdir ()
     {
         return dir;
-    }
-
-    //sets y gets del id del vehiculo
-    void setid (int a)
-    {
-        id = a;
-    }
-
-    int getid ()
-    {
-        return id;
     }
 
     //sets y gets del Tv del vehiculo
@@ -189,7 +223,7 @@ class vehicle : public element
 class moto : public vehicle
 {
     public:
-    void display()
+    void accion()
     {
 
     }
@@ -199,23 +233,192 @@ class moto : public vehicle
 class carro : public vehicle
 {
     public:
-    void display()
+    void accion()
     {
 
     }
 };
 
+carro *carros;
+moto *motos;
+Semaforo *semaforos;
+
 void leerArchivo(char* mapFileName, char* traficLights)
 {  
     ifstream ifs;
 
-    ifs.open(mapFileName, std::ifstream::in)
+    int carrosCount = 0, motosCount = 0, semaforosCount = 0, carrosIndex = 0, motosIndex = 0, semaforosIndex = 0;
+    int ID = 0;
+    string buff;
 
+    ifs.open(mapFileName, std::ifstream::in);
+
+    if (!ifs.is_open())
+    {
+        cout << "Error al abrir el archivo de salida." << endl;
+        return;
+    }
+
+    // Aquí se lee el contenido del mapa y los semáforos
+    
+    if (ifs.is_open()) 
+    {
+        ifs >> buff;
+        fila = stoi (buff.c_str(), 0, 10);
+        ifs >> buff;
+        columna = stoi (buff.c_str(), 0, 10);
+        ifs >> buff;
+        nCiclos = stoi (buff.c_str(), 0, 10);
+
+        map = new char*[fila];
+        mapMask = new int*[fila];
+
+        for(int i = 0; i < fila; i++)
+        {
+            map[i] = new char[columna];
+            mapMask[i] = new int[columna];
+        }
+
+        for(int i = 0; i < fila; i++)
+        {
+            for(int j = 0; j < columna; j++)
+            {
+                ifs >> buff;
+                map[i][j] = buff[0];
+                mapMask[i][j] = 0; 
+
+                if (buff == "S")
+                {
+                    semaforosCount++;
+                }
+                else if (buff == "M")
+                {
+                    motosCount++;
+                }
+                else if (buff == "A")
+                {
+                    carrosCount++;
+                }
+            }
+        }
+
+        ifs.close();
+    } else {
+        cout << "No se pudo abrir el archivo." << endl;
+    }
+
+    carros = new carro[carrosCount];
+    motos = new moto[motosCount];
+    semaforos = new Semaforo[semaforosCount];
+
+    for(int i = 0; i < fila; i++)
+    {
+        for(int j = 0; j < columna; j++)
+        {
+
+            if (map[i][j] == 'S')
+            {
+                semaforos[semaforosIndex].seti(i);
+                semaforos[semaforosIndex].setj(j);
+                semaforos[semaforosIndex].seteType(SEMAFORO);
+                semaforos[semaforosIndex].setid(ID);
+                semaforosIndex++;
+                ID++;
+            }
+            if (map[i][j] == 'M')
+            {
+                motos[motosIndex].seti(i);
+                motos[motosIndex].setj(j);
+                motos[motosIndex].seteType(MOTO);
+                motos[motosIndex].setid(ID);
+                motosIndex++;
+                ID++;
+            }
+            if (map[i][j] == 'A')
+            {
+                carros[carrosIndex].seti(i);
+                carros[carrosIndex].setj(j);
+                carros[carrosIndex].seteType(AUTO);
+                carros[carrosIndex].setid(ID);
+                carrosIndex++;
+                ID++;
+            }
+        }
+    }
+
+    ifs.open(traficLights, std::ifstream::in);
+
+    if (!ifs.is_open())
+    {
+        cout << "Error al abrir el archivo de salida." << endl;
+        return;
+    }
+
+    // Aquí se lee el contenido del mapa y los semáforos
+    
+    if (ifs.is_open()) 
+    {
+        for(int i = 0; i < semaforosCount; i++)
+        {
+            ifs >> buff;
+            semaforos[i].seti(stoi(buff.c_str(), 0, 10));
+            ifs >> buff;
+            semaforos[i].setj(stoi(buff.c_str(), 0, 10));
+            ifs >> buff;
+            semaforos[i].setnPatron(stoi(buff.c_str(), 0, 10));
+            ifs >> buff;
+            semaforos[i].setOffset(stoi(buff.c_str(), 0, 10));
+
+            for(int j = 0; j < semaforos[i].getnPatron(); j++)
+            {
+                ifs >> buff;
+                semaforos[i].setPatronElement(j, stoi(buff.c_str(), 0, 10));
+            }
+        }
+
+        ifs.close();
+    } else {
+        cout << "No se pudo abrir el archivo." << endl;
+    }
+    
+}
+
+void escribirArchivo(char* mapFileName)
+{
+    ofstream ofs;
+
+    ofs.open(mapFileName, std::ofstream::out);
+
+    if (!ofs.is_open())
+    {
+        cout << "Error al abrir el archivo de salida." << endl;
+        return;
+    }
+
+    // Aquí se escribiría el contenido del mapa y los semáforos
+    // Ejemplo:
+    ofs << "Contenido del mapa y semáforos" << endl;
+
+    ofs.close();
 }
 
 int main(int argc, char* argv[])
 {
 
+    cout << argc << endl;
+    cout << argv[1] << endl;
+    cout << argv[2] << endl;
+
+    leerArchivo(argv[1], argv[2]);
+    
+    for(int i = 0; i < fila; i++)
+    {
+        for(int j = 0; j < columna; j++)
+        {
+            cout << map[i][j] << " ";
+        }
+        cout << endl;
+    }
 
 
 }
