@@ -303,6 +303,7 @@ class vehicle : public element
                     diri = diri * -1;
                     Cd = Cd + 1; // Incrementa el contador de cambios de dirección
                     Td = Td + 1; // Incrementa el tiempo detenido
+                    return;
                 }
 
                 if(mapMask[x][y] == 3 && geteType() == AUTO) 
