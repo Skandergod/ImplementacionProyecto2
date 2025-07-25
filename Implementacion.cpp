@@ -297,6 +297,14 @@ class vehicle : public element
                     return;
                 }
 
+                if(map[x][y] == 'E')
+                {
+                    dirj = dirj * -1;
+                    diri = diri * -1;
+                    Cd = Cd + 1; // Incrementa el contador de cambios de dirección
+                    Td = Td + 1; // Incrementa el tiempo detenido
+                }
+
                 if(mapMask[x][y] == 3 && geteType() == AUTO) 
                 {
                     dirj = dirj * -1;
@@ -328,6 +336,8 @@ class vehicle : public element
         }
         else
         {
+            
+
             if(geteType() == AUTO) 
             {
                 dirj = dirj * -1;
