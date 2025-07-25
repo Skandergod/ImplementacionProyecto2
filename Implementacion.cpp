@@ -288,6 +288,7 @@ class vehicle : public element
                 seti(x);
                 setj(y);
                 Tv = Tv + 1; // Incrementa el tiempo de movimiento
+                return;
             }
             else
             {
@@ -311,6 +312,7 @@ class vehicle : public element
                     dirj = dirj * -1;
                     Cd = Cd + 1; // Incrementa el contador de cambios de dirección
                     Td = Td + 1; // Incrementa el tiempo detenido
+                    return;
                 }
 
                 if(mapMask[x][y] == 2 && geteType() == AUTO) 
@@ -318,6 +320,7 @@ class vehicle : public element
                     cout << "Colisión detectada entre carro y moto en posición: (" << x << ", " << y << ")" << endl;
                     disableVehicle(geti(), getj(), x, y);
                     Td = Td + 1; // Incrementa el tiempo detenido
+                    return;
                 }
 
                 if(mapMask[x][y] == 3 && geteType() == MOTO) 
@@ -325,6 +328,7 @@ class vehicle : public element
                     cout << "Colisión detectada entre carro y moto en posición: (" << x << ", " << y << ")" << endl;
                     disableVehicle(geti(), getj(), x, y);
                     Td = Td + 1; // Incrementa el tiempo detenido
+                    return;
                 }
 
                 if(mapMask[x][y] == 2 && geteType() == MOTO) 
@@ -332,6 +336,7 @@ class vehicle : public element
                     diri = diri * -1;
                     Cd = Cd + 1; // Incrementa el contador de cambios de dirección
                     Td = Td + 1; // Incrementa el tiempo detenido
+                    return;
                 }
             }
         }
@@ -344,6 +349,7 @@ class vehicle : public element
                 dirj = dirj * -1;
                 Cd = Cd + 1; // Incrementa el contador de cambios de dirección
                 Td = Td + 1; // Incrementa el tiempo detenido
+                return;
             }
 
             if(geteType() == MOTO) 
@@ -351,6 +357,7 @@ class vehicle : public element
                 diri = diri * -1;
                 Cd = Cd + 1; // Incrementa el contador de cambios de dirección
                 Td = Td + 1; // Incrementa el tiempo detenido
+                return;
             }
         }
     }
