@@ -447,6 +447,10 @@ void leerArchivo(char* mapFileName, char* traficLights)
         for(int j = 0; j < columna; j++)
         {
 
+            if (map[i][j] == 'E')
+            {
+                mapMask[i][j] = 0;
+            }
             if (map[i][j] == 'S')
             {
                 cout << "cargando semaforo en: " << i << ", " << j << endl;
@@ -633,6 +637,11 @@ void escribirArchivo(char* mapFileName, char* statsFileName)
                 {
                     finalMap[i][j] = 'A';
                 }
+            }
+
+            if(map[i][j] == 'E')
+            {
+                finalMap[i][j] = 'E';
             }
         }
     }
