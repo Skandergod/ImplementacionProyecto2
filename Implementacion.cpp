@@ -7,10 +7,14 @@ using namespace std;
 char** map;
 int** mapMask;
 int nCiclos = 0;
-int fila = 0, columna = 0;
+int fila = 0, columna = 0, cicloActual = 0, carrosCount = 0, motosCount = 0, semaforosCount = 0;
+int ID = 0; // Variable para asignar IDs únicos a los elementos y contar cuantos elementos hay en el mapa
+
+void disableVehicle(int i1, int j1, int i2, int j2);
 
 enum elementType
 {
+    NONE,
 	SEMAFORO,
 	MOTO,
 	AUTO,
@@ -33,7 +37,7 @@ class element
         i = a;
     }
 
-    int geti (int a)
+    int geti ()
     {
         return i;
     }
@@ -44,7 +48,7 @@ class element
         j = a;
     }
 
-    int getj (int a)
+    int getj ()
     {
         return j;
     }
@@ -55,7 +59,7 @@ class element
         eType = a;
     }
 
-    int geteType (int a)
+    int geteType ()
     {
         return eType;
     }
@@ -141,17 +145,41 @@ class Semaforo : public element
 
     void accion()
     {
-        cout << "hello world" << endl;
+        cambiarColor();
+        if(patron[offset] == 1)
+        {
+            mapMask[geti()][getj()] = 1;
+        }
+        else
+        {
+            // Lógica para el semáforo en rojo
+            // Aquí se podría implementar la lógica de detención de vehículos, etc.
+            mapMask[geti()][getj()] = 0; // Marca la posición del semáforo en rojo
+        }
+        
     }
-    
 
+    void cambiarColor()
+    {
+        // Lógica para cambiar el color del semáforo
+        // dependiendo del patrón y el offset.
+
+        if(offset == nPatron)
+        {
+            offset = 0; // Reiniciar el offset si se alcanza el final del patrón
+        }
+        else
+        {
+            offset++;
+        }
+    }
 };
 
 class vehicle : public element
 {
 
     private:
-    int dir, V, Tv, Td, Cd, A;
+    int diri, dirj, V, Tv, Td, Cd, A;
 
     //Tv = Tiempo vehiculo en movimiento
     //Td = Tiempo vehiculo detenido
@@ -162,14 +190,39 @@ class vehicle : public element
 
     public:
     //sets y gets de la direccion de vehiculo
-    void setdir (int a)
+
+    vehicle()
     {
-        dir = a;
+        seti(0);
+        setj(0);
+        seteType(NONE);
+        setid(0);
+        diri = 0;
+        dirj = 0;
+        Tv = 0;
+        Td = 0;
+        Cd = 0;
+        A = 0; // Marca el vehículo como activo inicialmente
     }
 
-    int getdir ()
+    void setdiri (int a)
     {
-        return dir;
+        diri = a;
+    }
+
+    int getdiri ()
+    {
+        return diri;
+    }
+
+    void setdirj (int a)
+    {
+        dirj = a;
+    }
+
+    int getdirj ()
+    {
+        return dirj;
     }
 
     //sets y gets del Tv del vehiculo
@@ -216,7 +269,80 @@ class vehicle : public element
         return A;
     }
 
+    void moverse(int x, int y)
+    {
+        cout << "Moviendo vehiculo: "<< getid() << " a la posicion: (" << x << ", " << y << ")," << "con direccion (" << diri << ", " << dirj << "),"  << "Esta activado: " << A << endl;
+        
+        if( A >= 1 ) // Si el vehículo ha chocado, no se mueve
+        {
+            Td = Td + 1;
+            return;
+        }
 
+        if( x >= 0 && x < fila && y >= 0 && y < columna)
+        {
+            if(mapMask[x][y] == 1) // Verifica si la posición está libre
+            {
+                mapMask[geti()][getj()] = 1; // Marca la posición actual como libre
+                mapMask[x][y] = geteType(); // Marca la nueva posición como ocupada
+                seti(x);
+                setj(y);
+                Tv = Tv + 1; // Incrementa el tiempo de movimiento
+            }
+            else
+            {
+                if(map[x][y] == 'S') 
+                {
+                    Td = Td + 1; // Incrementa el tiempo detenido
+                    return;
+                }
+
+                if(mapMask[x][y] == 3 && geteType() == AUTO) 
+                {
+                    dirj = dirj * -1;
+                    Cd = Cd + 1; // Incrementa el contador de cambios de dirección
+                    Td = Td + 1; // Incrementa el tiempo detenido
+                }
+
+                if(mapMask[x][y] == 2 && geteType() == AUTO) 
+                {
+                    cout << "Colisión detectada entre carro y moto en posición: (" << x << ", " << y << ")" << endl;
+                    disableVehicle(geti(), getj(), x, y);
+                    Td = Td + 1; // Incrementa el tiempo detenido
+                }
+
+                if(mapMask[x][y] == 3 && geteType() == MOTO) 
+                {
+                    cout << "Colisión detectada entre carro y moto en posición: (" << x << ", " << y << ")" << endl;
+                    disableVehicle(geti(), getj(), x, y);
+                    Td = Td + 1; // Incrementa el tiempo detenido
+                }
+
+                if(mapMask[x][y] == 2 && geteType() == MOTO) 
+                {
+                    diri = diri * -1;
+                    Cd = Cd + 1; // Incrementa el contador de cambios de dirección
+                    Td = Td + 1; // Incrementa el tiempo detenido
+                }
+            }
+        }
+        else
+        {
+            if(geteType() == AUTO) 
+            {
+                dirj = dirj * -1;
+                Cd = Cd + 1; // Incrementa el contador de cambios de dirección
+                Td = Td + 1; // Incrementa el tiempo detenido
+            }
+
+            if(geteType() == MOTO) 
+            {
+                diri = diri * -1;
+                Cd = Cd + 1; // Incrementa el contador de cambios de dirección
+                Td = Td + 1; // Incrementa el tiempo detenido
+            }
+        }
+    }
 
 };
 
@@ -225,9 +351,10 @@ class moto : public vehicle
     public:
     void accion()
     {
-
+        int x = geti() + getdiri();
+        int y = getj() + getdirj();
+        moverse(x, y);
     }
-
 };
 
 class carro : public vehicle
@@ -235,7 +362,9 @@ class carro : public vehicle
     public:
     void accion()
     {
-
+        int x = geti() + getdiri();
+        int y = getj() + getdirj();
+        moverse(x, y);
     }
 };
 
@@ -247,8 +376,7 @@ void leerArchivo(char* mapFileName, char* traficLights)
 {  
     ifstream ifs;
 
-    int carrosCount = 0, motosCount = 0, semaforosCount = 0, carrosIndex = 0, motosIndex = 0, semaforosIndex = 0;
-    int ID = 0;
+    int carrosIndex = 0, motosIndex = 0, semaforosIndex = 0;
     string buff;
 
     ifs.open(mapFileName, std::ifstream::in);
@@ -263,6 +391,7 @@ void leerArchivo(char* mapFileName, char* traficLights)
     
     if (ifs.is_open()) 
     {
+        cout << "Se abrio el archivo: " << mapFileName << endl;
         ifs >> buff;
         fila = stoi (buff.c_str(), 0, 10);
         ifs >> buff;
@@ -285,7 +414,7 @@ void leerArchivo(char* mapFileName, char* traficLights)
             {
                 ifs >> buff;
                 map[i][j] = buff[0];
-                mapMask[i][j] = 0; 
+                mapMask[i][j] = 1; 
 
                 if (buff == "S")
                 {
@@ -307,6 +436,8 @@ void leerArchivo(char* mapFileName, char* traficLights)
         cout << "No se pudo abrir el archivo." << endl;
     }
 
+    cout << "Mapa Cargado" << endl;
+
     carros = new carro[carrosCount];
     motos = new moto[motosCount];
     semaforos = new Semaforo[semaforosCount];
@@ -318,6 +449,7 @@ void leerArchivo(char* mapFileName, char* traficLights)
 
             if (map[i][j] == 'S')
             {
+                cout << "cargando semaforo en: " << i << ", " << j << endl;
                 semaforos[semaforosIndex].seti(i);
                 semaforos[semaforosIndex].setj(j);
                 semaforos[semaforosIndex].seteType(SEMAFORO);
@@ -327,19 +459,36 @@ void leerArchivo(char* mapFileName, char* traficLights)
             }
             if (map[i][j] == 'M')
             {
+                cout << "cargando moto en: " << i << ", " << j << endl;
                 motos[motosIndex].seti(i);
                 motos[motosIndex].setj(j);
                 motos[motosIndex].seteType(MOTO);
                 motos[motosIndex].setid(ID);
+                motos[motosIndex].setdiri(-1); 
+                motos[motosIndex].setdirj(0);
+                motos[motosIndex].setCd(0); 
+                motos[motosIndex].setTv(0); // Tiempo de movimiento inicial
+                motos[motosIndex].setTd(0); // Tiempo detenido inicial
+                motos[motosIndex].setCd(0);
+                motos[motosIndex].setA(0); // Marca la moto como activa inicialmente
+                mapMask[i][j] = 2; // Marca la posición de la moto en el mapa
                 motosIndex++;
                 ID++;
             }
             if (map[i][j] == 'A')
             {
+                cout << "cargando carro en: " << i << ", " << j << endl;
                 carros[carrosIndex].seti(i);
                 carros[carrosIndex].setj(j);
                 carros[carrosIndex].seteType(AUTO);
                 carros[carrosIndex].setid(ID);
+                carros[carrosIndex].setdiri(0);
+                carros[carrosIndex].setdirj(-1);
+                carros[carrosIndex].setTv(0); // Tiempo de movimiento inicial
+                carros[carrosIndex].setTd(0); // Tiempo detenido inicial
+                carros[carrosIndex].setCd(0); // Cambios de dirección inicial
+                carros[carrosIndex].setA(0); // Marca la moto como activa inicialmente
+                mapMask[i][j] = 3; // Marca la posición del carro en el mapa
                 carrosIndex++;
                 ID++;
             }
@@ -358,32 +507,93 @@ void leerArchivo(char* mapFileName, char* traficLights)
     
     if (ifs.is_open()) 
     {
-        for(int i = 0; i < semaforosCount; i++)
+        cout << "Se abrio el archivo: " << traficLights << endl;
+        if( semaforosCount == 0 )
         {
-            ifs >> buff;
-            semaforos[i].seti(stoi(buff.c_str(), 0, 10));
-            ifs >> buff;
-            semaforos[i].setj(stoi(buff.c_str(), 0, 10));
-            ifs >> buff;
-            semaforos[i].setnPatron(stoi(buff.c_str(), 0, 10));
-            ifs >> buff;
-            semaforos[i].setOffset(stoi(buff.c_str(), 0, 10));
-
-            for(int j = 0; j < semaforos[i].getnPatron(); j++)
+            cout << "No se encontraron semáforos en el archivo." << endl;
+        }
+        else
+        {
+            for(int i = 0; i < semaforosCount; i++)
             {
                 ifs >> buff;
-                semaforos[i].setPatronElement(j, stoi(buff.c_str(), 0, 10));
+                semaforos[i].seti(stoi(buff.c_str(), 0, 10));
+                ifs >> buff;
+                semaforos[i].setj(stoi(buff.c_str(), 0, 10));
+                ifs >> buff;
+                semaforos[i].setnPatron(stoi(buff.c_str(), 0, 10));
+                ifs >> buff;
+                semaforos[i].setOffset(stoi(buff.c_str(), 0, 10));
+                semaforos[i].crearPatron(semaforos[i].getnPatron());
+
+                for(int j = 0; j < semaforos[i].getnPatron(); j++)
+                {
+                    ifs >> buff;
+                    semaforos[i].setPatronElement(j, stoi(buff.c_str(), 0, 10));
+                }
             }
         }
-
         ifs.close();
+
+        for(int j = 0; j < semaforosCount; j++)
+        {
+            mapMask[semaforos[j].geti()][semaforos[j].getj()] = semaforos[j].getPatronElement(semaforos[j].getOffset()); // Marca la posición del semáforo en el mapa
+        }
+
     } else {
         cout << "No se pudo abrir el archivo." << endl;
+    }
+
+    cout << "Archivos Cargados" << endl;
+    
+}
+
+void disableVehicle(int i1, int j1, int i2, int j2)
+{
+    // Lógica para deshabilitar un vehículo
+    // Aquí se podría implementar la lógica de choque, por ejemplo, marcando el vehículo como inactivo o eliminándolo del mapa
+
+    for(int j = 0; j < motosCount; j++)
+    {
+        if (motos[j].geti() == i1 && motos[j].getj() == j1)
+        {
+            cout << "Moto en posición (" << i1 << ", " << j1 << ") deshabilitada." << endl;
+            motos[j].setA(cicloActual+1); // Marca la moto como inactiva
+            motos[j].setdiri(0); // Reinicia el tiempo de movimiento
+            motos[j].setdirj(0); // Reinicia la dirección
+        }
+
+        if (motos[j].geti() == i2 && motos[j].getj() == j2)
+        {
+            cout << "Moto en posición (" << i2 << ", " << j2 << ") deshabilitada." << endl;
+            motos[j].setA(cicloActual+1); // Marca la moto como inactiva
+            motos[j].setdiri(0); // Reinicia el tiempo de movimiento
+            motos[j].setdirj(0); // Reinicia la dirección
+        }
+    }
+
+    for(int j = 0; j < carrosCount; j++)
+    {
+        if (carros[j].geti() == i1 && carros[j].getj() == j1)
+        {
+            cout << "Carro en posición (" << i1 << ", " << j1 << ") deshabilitado." << endl;
+            carros[j].setA(cicloActual+1); // Marca el carro como inactivo
+            carros[j].setdiri(0); // Reinicia el tiempo de movimiento
+            carros[j].setdirj(0); // Reinicia la dirección
+        }
+
+        if (carros[j].geti() == i2 && carros[j].getj() == j2)
+        {
+            cout << "Carro en posición (" << i2 << ", " << j2 << ") deshabilitado." << endl;
+            carros[j].setA(cicloActual+1); // Marca el carro como inactivo
+            carros[j].setdiri(0); // Reinicia el tiempo de movimiento
+            carros[j].setdirj(0); // Reinicia la dirección
+        }
     }
     
 }
 
-void escribirArchivo(char* mapFileName)
+void escribirArchivo(char* mapFileName, char* statsFileName)
 {
     ofstream ofs;
 
@@ -402,12 +612,69 @@ void escribirArchivo(char* mapFileName)
     ofs.close();
 }
 
+void ejecutarAccion(int elemento)
+{
+    for(int i = 0; i < semaforosCount; i++)
+    {
+        if (semaforos[i].getid() == elemento)
+        {
+            cout << "Ejecutando accion para el elemento con ID: " << elemento << endl;
+            semaforos[i].accion();
+        }
+    }
+
+    for(int i = 0; i < motosCount; i++)
+    {
+        if (motos[i].getid() == elemento)
+        {
+            cout << "Ejecutando accion para el elemento con ID: " << elemento << endl;
+            motos[i].accion();
+        }
+    }
+
+    for(int i = 0; i < carrosCount; i++)
+    {
+        if (carros[i].getid() == elemento)
+        {
+            cout << "Ejecutando accion para el elemento con ID: " << elemento << endl;
+            carros[i].accion();
+        }
+    }
+}
+
+void imprimirEstadisticas(int elemento)
+{
+    for(int i = 0; i < motosCount; i++)
+    {
+        if (motos[i].getid() == elemento)
+        {
+            cout    << motos[i].getid() + 1 << " "
+                    << motos[i].geteType() << " " 
+                    << motos[i].getTv() << " "
+                    << motos[i].getTd() << " "
+                    << motos[i].getCd() << " "
+                    << motos[i].getA()  << " " << endl;
+        }
+    }
+
+    for(int i = 0; i < carrosCount; i++)
+    {
+        if (carros[i].getid() == elemento)
+        {
+            cout    << carros[i].getid() + 1 << " "
+                    << carros[i].geteType() << " " 
+                    << carros[i].getTv() << " "
+                    << carros[i].getTd() << " "
+                    << carros[i].getCd() << " "
+                    << carros[i].getA()  << " " << endl;
+        }
+    }
+
+    
+}
+
 int main(int argc, char* argv[])
 {
-
-    cout << argc << endl;
-    cout << argv[1] << endl;
-    cout << argv[2] << endl;
 
     leerArchivo(argv[1], argv[2]);
     
@@ -420,5 +687,21 @@ int main(int argc, char* argv[])
         cout << endl;
     }
 
+    for(cicloActual = 0; cicloActual < nCiclos; cicloActual++)
+    {
+        cout << "Ciclo: " << cicloActual + 1 << endl;
+        for(int j = 0; j < ID; j++)
+        {
+            ejecutarAccion(j);
+        }
+    }
+
+    for(int i = 0; i < ID; i++)
+    {
+        imprimirEstadisticas(i);
+    }
+    
+
+    //escribirArchivo((char*)"log_simulacion.out", (char*)"estadisticas.out");
 
 }
