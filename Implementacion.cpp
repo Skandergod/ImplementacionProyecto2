@@ -682,7 +682,7 @@ void escribirArchivo(char* mapFileName, char* statsFileName)
     {
         for(int j = 0; j < columna; j++)
         {
-            cout << finalMap[i][j] << " ";
+            cout << mapMask[i][j] << " ";
         }
 
         cout << endl;
@@ -807,6 +807,18 @@ void imprimirEstadisticas(int elemento)
     }
 }
 
+void imprimirMapa()
+{
+    
+    for(int i = 0; i < fila; i++)
+    {
+        for(int j = 0; j < columna; j++)
+        {
+            cout << mapMask[i][j] << " ";
+        }
+        cout << endl;
+    }
+}
 
 
 int main(int argc, char* argv[])
@@ -829,7 +841,10 @@ int main(int argc, char* argv[])
         for(int j = 0; j < ID; j++)
         {
             ejecutarAccion(j);
+            
         }
+
+        imprimirMapa();
     }
 
     escribirArchivo((char*)"log_simulacion.out", (char*)"estadisticas.out");
