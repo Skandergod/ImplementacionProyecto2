@@ -504,7 +504,7 @@ void leerArchivo(char* mapFileName, char* traficLights)
     }
 
     // Aquí se lee el contenido del mapa y los semáforos
-    
+    buff = "";
     if (ifs.is_open()) 
     {
         cout << "Se abrio el archivo: " << traficLights << endl;
@@ -517,6 +517,7 @@ void leerArchivo(char* mapFileName, char* traficLights)
             for(int i = 0; i < semaforosCount; i++)
             {
                 ifs >> buff;
+                cout << buff << endl;
                 semaforos[i].seti(stoi(buff.c_str(), 0, 10));
                 ifs >> buff;
                 semaforos[i].setj(stoi(buff.c_str(), 0, 10));
@@ -531,6 +532,7 @@ void leerArchivo(char* mapFileName, char* traficLights)
                     ifs >> buff;
                     semaforos[i].setPatronElement(j, stoi(buff.c_str(), 0, 10));
                 }
+                
             }
         }
         ifs.close();
@@ -597,19 +599,126 @@ void escribirArchivo(char* mapFileName, char* statsFileName)
 {
     ofstream ofs;
 
+    char** finalMap;
+    finalMap = new char*[fila];
+    for(int i = 0; i < fila; i++)
+    {
+        finalMap[i] = new char[columna];
+    }
+
+
+    for(int i = 0; i < fila; i++)
+    {
+        for(int j = 0; j < columna; j++)
+        {
+            finalMap[i][j] = 'C';
+        }
+    }
+
+    for(int i = 0; i < fila; i++)
+    {
+        for(int j = 0; j < columna; j++)
+        {
+            for(int k = 0; k < motosCount; k++)
+            {
+                if (motos[k].geti() == i && motos[k].getj() == j)
+                {
+                    finalMap[i][j] = 'M';
+                }
+            }
+
+            for(int k = 0; k < carrosCount; k++)
+            {
+                if (carros[k].geti() == i && carros[k].getj() == j)
+                {
+                    finalMap[i][j] = 'A';
+                }
+            }
+        }
+    }
+
+    for(int i = 0; i < fila; i++)
+    {
+        for(int j = 0; j < columna; j++)
+        {
+            for(int k = 0; k < semaforosCount; k++)
+            {
+                if (semaforos[k].geti() == i && semaforos[k].getj() == j)
+                {
+                    finalMap[i][j] = 'S';
+                }
+            }
+        }
+    }
+
+    for(int i = 0; i < fila; i++)
+    {
+        for(int j = 0; j < columna; j++)
+        {
+            cout << finalMap[i][j] << " ";
+        }
+
+        cout << endl;
+    }
+
     ofs.open(mapFileName, std::ofstream::out);
 
-    if (!ofs.is_open())
+    if (ofs.is_open())
     {
-        cout << "Error al abrir el archivo de salida." << endl;
-        return;
+        for(int i = 0; i < fila; i++)
+        {
+            for(int j = 0; j < columna; j++)
+            {
+                ofs << finalMap[i][j] << " ";
+            }
+            ofs << endl;
+        }
     }
 
     // Aquí se escribiría el contenido del mapa y los semáforos
     // Ejemplo:
-    ofs << "Contenido del mapa y semáforos" << endl;
 
     ofs.close();
+
+
+
+
+    ofs.open(statsFileName, std::ofstream::out);
+
+    if (ofs.is_open())
+    {
+        for(int k = 0; k < ID; k++)
+        {
+            for(int i = 0; i < motosCount; i++)
+            {
+                if (motos[i].getid() == k)
+                {
+                    ofs     << motos[i].getid() + 1 << " "
+                            << "Moto" << " " 
+                            << motos[i].getTv() << " "
+                            << motos[i].getTd() << " "
+                            << motos[i].getCd() << " "
+                            << motos[i].getA()  << " " << endl;
+                }
+            }
+
+            for(int i = 0; i < carrosCount; i++)
+            {
+                if (carros[i].getid() == k)
+                {
+                    ofs     << carros[i].getid() + 1 << " "
+                            << "Auto" << " " 
+                            << carros[i].getTv() << " "
+                            << carros[i].getTd() << " "
+                            << carros[i].getCd() << " "
+                            << carros[i].getA()  << " " << endl;
+                }
+            }
+        }
+    }
+
+    ofs.close();
+
 }
 
 void ejecutarAccion(int elemento)
@@ -649,7 +758,7 @@ void imprimirEstadisticas(int elemento)
         if (motos[i].getid() == elemento)
         {
             cout    << motos[i].getid() + 1 << " "
-                    << motos[i].geteType() << " " 
+                    << "Moto" << " " 
                     << motos[i].getTv() << " "
                     << motos[i].getTd() << " "
                     << motos[i].getCd() << " "
@@ -662,16 +771,16 @@ void imprimirEstadisticas(int elemento)
         if (carros[i].getid() == elemento)
         {
             cout    << carros[i].getid() + 1 << " "
-                    << carros[i].geteType() << " " 
+                    << "Auto" << " " 
                     << carros[i].getTv() << " "
                     << carros[i].getTd() << " "
                     << carros[i].getCd() << " "
                     << carros[i].getA()  << " " << endl;
         }
     }
-
-    
 }
+
+
 
 int main(int argc, char* argv[])
 {
@@ -696,12 +805,6 @@ int main(int argc, char* argv[])
         }
     }
 
-    for(int i = 0; i < ID; i++)
-    {
-        imprimirEstadisticas(i);
-    }
-    
-
-    //escribirArchivo((char*)"log_simulacion.out", (char*)"estadisticas.out");
+    escribirArchivo((char*)"log_simulacion.out", (char*)"estadisticas.out");
 
 }
